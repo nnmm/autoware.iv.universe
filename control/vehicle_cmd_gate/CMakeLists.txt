@@ -14,9 +14,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(autoware_control_msgs REQUIRED)
 find_package(autoware_vehicle_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
 
 # Add path of include dir
 include_directories(include)
@@ -24,7 +22,7 @@ include_directories(include)
 # Generate exe file
 add_executable(vehicle_cmd_gate src/vehicle_cmd_gate_node.cpp src/vehicle_cmd_gate.cpp src/vehicle_cmd_filter.cpp)
 
-ament_target_dependencies(vehicle_cmd_gate autoware_control_msgs autoware_vehicle_msgs geometry_msgs rclcpp std_msgs)
+ament_target_dependencies(vehicle_cmd_gate autoware_control_msgs autoware_vehicle_msgs rclcpp)
 
 install(
   TARGETS vehicle_cmd_gate
