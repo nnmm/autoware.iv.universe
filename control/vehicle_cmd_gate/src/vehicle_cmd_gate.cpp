@@ -300,12 +300,12 @@ autoware_control_msgs::msg::ControlCommand VehicleCmdGate::createStopControlCmd(
 
 void VehicleCmdGate::onEngage(autoware_control_msgs::msg::EngageMode::ConstSharedPtr msg)
 {
-  is_engaged_ = msg->is;
+  is_engaged_ = msg->is_engaged;
 }
 
 void VehicleCmdGate::onEmergency(autoware_control_msgs::msg::EmergencyMode::ConstSharedPtr msg)
 {
-  is_emergency_ = msg->is;
+  is_emergency_ = msg->is_emergency;
 }
 
 void VehicleCmdGate::onGateMode(autoware_control_msgs::msg::GateMode::ConstSharedPtr msg)

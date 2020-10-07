@@ -1,1 +1,1 @@
-bool is
+bool is_emergency

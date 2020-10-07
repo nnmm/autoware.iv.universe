@@ -12,4 +12,7 @@
   <depend>autoware_vehicle_msgs</depend>
   <depend>rclcpp</depend>
 
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

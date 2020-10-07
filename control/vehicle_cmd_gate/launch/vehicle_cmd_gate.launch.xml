@@ -23,7 +23,7 @@
     <remap from="output/turn_signal_cmd" to="/control/turn_signal_cmd"/>
     <remap from="output/gate_mode" to="/control/current_gate_mode"/>
 
-    <param from="$(find vehicle_cmd_gate)/config/vehicle_cmd_gate.yaml" />
+    <param from="$(find-pkg-share vehicle_cmd_gate)/config/vehicle_cmd_gate.yaml" />
   </node>
 
 </launch>
