@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include "ndt_scan_matcher/ndt_scan_matcher_core.h"
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "ndt_scan_matcher");
-  ros::NodeHandle nh;
-  ros::NodeHandle private_nh("~");
+  rclcpp::init(argc, argv, "ndt_scan_matcher");
+  rclcpp::NodeHandle nh;
+  rclcpp::NodeHandle private_nh("~");
 
   NDTScanMatcher node(nh, private_nh);
 
-  ros::spin();
+  rclcpp::spin();
   return 0;
 }

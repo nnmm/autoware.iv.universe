@@ -1,10 +1,41 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(ndt_scan_matcher)
 
-add_compile_options(-std=c++14)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
+find_package(pcl_conversions REQUIRED)
+# find_package(ndt_pcl_modified REQUIRED)
+# find_package(ndt_omp REQUIRED)
+# find_package(ndt REQUIRED)
+find_package(autoware_localization_srvs REQUIRED)
+
+include_directories(include)
+
+add_executable(ndt_scan_matcher
+  src/ndt_scan_matcher_node.cpp
+  src/ndt_scan_matcher_core.cpp
+)
+
+set(NDT_SCAN_MATCHER_DEPENDENCIES
+  rclcpp
   tf2
   tf2_ros
   tf2_sensor_msgs
@@ -16,42 +47,25 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   diagnostic_msgs
   pcl_conversions
-  pcl_ros
-  dynamic_reconfigure
-  ndt_pcl_modified
-  ndt_omp
-  ndt
+  # ndt_pcl_modified
+  # ndt_omp
+  # ndt
   autoware_localization_srvs
 )
 
-catkin_package(
-  INCLUDE_DIRS include
-)
-
-include_directories(include ${catkin_INCLUDE_DIRS})
-
-add_executable(ndt_scan_matcher
-  src/ndt_scan_matcher_node.cpp
-  src/ndt_scan_matcher_core.cpp
-)
-
-add_dependencies(ndt_scan_matcher
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
-
-target_link_libraries(ndt_scan_matcher ${catkin_LIBRARIES})
+ament_target_dependencies(ndt_scan_matcher ${NDT_SCAN_MATCHER_DEPENDENCIES})
+ament_export_dependencies(${NDT_SCAN_MATCHER_DEPENDENCIES})
 
 install(
-  TARGETS
-    ndt_scan_matcher
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  TARGETS ndt_scan_matcher
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
   DIRECTORY
     launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    config
+  DESTINATION share/${PROJECT_NAME}
 )
+
+ament_package()
