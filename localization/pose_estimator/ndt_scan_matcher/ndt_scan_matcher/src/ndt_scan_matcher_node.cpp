@@ -20,12 +20,8 @@
 
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv, "ndt_scan_matcher");
-  rclcpp::NodeHandle nh;
-  rclcpp::NodeHandle private_nh("~");
-
-  NDTScanMatcher node(nh, private_nh);
-
-  rclcpp::spin();
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<NDTScanMatcher>());
+  rclcpp::shutdown();
   return 0;
 }

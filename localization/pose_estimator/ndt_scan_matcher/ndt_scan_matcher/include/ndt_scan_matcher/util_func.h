@@ -20,18 +20,17 @@
 #include <cmath>
 #include <random>
 
-#include <tf/tf.h>
 #include <tf2_eigen/tf2_eigen.h>
 
-#include <geometry_msgs/msg/PoseArray.hpp>
-#include <geometry_msgs/msg/PoseWithCovarianceStamped.hpp>
-#include <geometry_msgs/msg/TwistStamped.hpp>
-#include <nav_msgs/msg/Odometry.hpp>
-#include <sensor_msgs/msg/PointCloud2.hpp>
-#include <std_msgs/msg/Float32.hpp>
-#include <visualization_msgs/msg/MarkerArray.hpp>
+#include <geometry_msgs/msg/pose_array.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
-#include <eigen_conversions/eigen_msg.h>
+// TODO #include <eigen_conversions/eigen_msg.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 // ref by http://takacity.blog.fc2.com/blog-entry-69.html
@@ -157,10 +156,10 @@ geometry_msgs::msg::Twist calcTwist(
 }
 
 void getNearestTimeStampPose(
-  const std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstPtr> & pose_cov_msg_ptr_array,
-  const rclcpp::Time & time_stamp,
-  geometry_msgs::msg::PoseWithCovarianceStamped::ConstPtr & output_old_pose_cov_msg_ptr,
-  geometry_msgs::msg::PoseWithCovarianceStamped::ConstPtr & output_new_pose_cov_msg_ptr)
+  const std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> & pose_cov_msg_ptr_array,
+  const builtin_interfaces::msg::Time & time_stamp,
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_old_pose_cov_msg_ptr,
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_new_pose_cov_msg_ptr)
 {
   for (const auto & pose_cov_msg_ptr : pose_cov_msg_ptr_array) {
     output_new_pose_cov_msg_ptr = pose_cov_msg_ptr;
@@ -179,7 +178,7 @@ void getNearestTimeStampPose(
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b,
-  const rclcpp::Time & time_stamp)
+  const builtin_interfaces::msg::Time & time_stamp)
 {
   if (
     pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 ||
@@ -216,7 +215,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseWithCovarianceStamped & pose_a,
-  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const rclcpp::Time & time_stamp)
+  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const builtin_interfaces::msg::Time & time_stamp)
 {
   geometry_msgs::msg::PoseStamped tmp_pose_a;
   tmp_pose_a.header = pose_a.header;
@@ -231,7 +230,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
 void popOldPose(
   std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstPtr> & pose_cov_msg_ptr_array,
-  const rclcpp::Time & time_stamp)
+  const builtin_interfaces::msg::Time & time_stamp)
 {
   while (!pose_cov_msg_ptr_array.empty()) {
     if (pose_cov_msg_ptr_array.front()->header.stamp >= time_stamp) {
