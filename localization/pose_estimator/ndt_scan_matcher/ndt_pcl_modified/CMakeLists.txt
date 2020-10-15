@@ -23,7 +23,7 @@ target_include_directories(ndt_pcl_modified
 
 ament_target_dependencies(ndt_pcl_modified PCL)
 ament_export_targets(export_ndt_pcl_modified HAS_LIBRARY_TARGET)
-ament_export_dependencies(ndt_pcl_modified PCL)
+ament_export_dependencies(PCL)
 
 install(
   DIRECTORY include/

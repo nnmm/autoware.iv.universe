@@ -28,11 +28,15 @@ find_package(ndt REQUIRED)
 find_package(autoware_localization_srvs REQUIRED)
 find_package(PCL REQUIRED COMPONENTS registration)
 
-include_directories(include)
-
 add_executable(ndt_scan_matcher
   src/ndt_scan_matcher_node.cpp
   src/ndt_scan_matcher_core.cpp
+)
+
+target_include_directories(ndt_scan_matcher
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
 )
 
 set(NDT_SCAN_MATCHER_DEPENDENCIES

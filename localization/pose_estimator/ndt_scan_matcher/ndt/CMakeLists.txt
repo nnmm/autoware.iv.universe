@@ -9,9 +9,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common io registration)
 find_package(ndt_omp REQUIRED)
 find_package(ndt_pcl_modified REQUIRED)
-find_package(PCL REQUIRED COMPONENTS common registration io)
 
 add_library(ndt
   src/base.cpp

@@ -75,7 +75,7 @@ install(
 )
 
 install(
-  TARGETS ndt_omp align
+  TARGETS ndt_omp
   EXPORT export_ndt_omp
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
