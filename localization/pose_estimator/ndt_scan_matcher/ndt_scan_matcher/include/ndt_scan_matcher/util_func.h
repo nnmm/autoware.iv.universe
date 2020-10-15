@@ -133,7 +133,8 @@ geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseWithCovarianceS
 geometry_msgs::msg::Twist calcTwist(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b)
 {
-  const double dt = (pose_b.header.stamp - pose_a.header.stamp).toSec();
+  const std::chrono::microseconds dt_ms = from_message(pose_b.header.stamp) - from_message(pose_a.header.stamp);
+  const double dt = std::chrono::duration<double>(dt_ms).count();
 
   if (dt == 0) {
     return geometry_msgs::msg::Twist();
@@ -173,7 +174,8 @@ void getNearestTimeStampPose(
     output_new_pose_cov_msg_ptr = pose_cov_msg_ptr;
     if (from_message(output_new_pose_cov_msg_ptr->header.stamp) > time_stamp) {
       // TODO refactor
-      if (output_old_pose_cov_msg_ptr->header.stamp.toSec() == 0) {
+      const auto ns_since_epoch = std::chrono::seconds(output_old_pose_cov_msg_ptr->header.stamp.sec) + std::chrono::nanoseconds(output_old_pose_cov_msg_ptr->header.stamp.nanosec);
+      if (output_old_pose_cov_msg_ptr->header.stamp == std::chrono::nanoseconds(0)) {
         output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
       }
       break;
@@ -189,6 +191,8 @@ geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b,
   const std::chrono::system_clock::time_point & time_stamp)
 {
+  const std::chrono::system_clock::time_point time_a = from_message(pose_a->header.stamp);
+  const std::chrono::system_clock::time_point time_b = from_message(pose_b->header.stamp);
   if (
     pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 ||
     time_stamp.toSec() == 0) {
@@ -196,7 +200,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
   }
 
   const auto twist = calcTwist(pose_a, pose_b);
-  const double dt = (time_stamp - pose_a.header.stamp).toSec();
+  const double dt = std::chrono::duration<double>(time_stamp - time_a).count();
 
   const auto pose_a_rpy = getRPY(pose_a);
 

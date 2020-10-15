@@ -131,7 +131,7 @@ private:
 
   rclcpp::Service<autoware_localization_srvs::srv::PoseWithCovarianceStamped>::SharedPtr service_;
 
-  tf2_ros::Buffer tf2_buffer_;
+  tf2::BufferCore tf2_buffer_;
   tf2_ros::TransformListener tf2_listener_;
   tf2_ros::TransformBroadcaster tf2_broadcaster_;
 

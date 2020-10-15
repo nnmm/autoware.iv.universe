@@ -22,6 +22,7 @@
 #include <functional>
 #include <thread>
 
+#include <boost/shared_ptr.hpp>
 #include <tf2_eigen/tf2_eigen.h>
 
 // TODO: #include <eigen_conversions/eigen_msg.h>
@@ -217,9 +218,9 @@ void NDTScanMatcher::callbackInitialPose(
 {
   // if rosbag restart, clear buffer
   if (!initial_pose_msg_ptr_array_.empty()) {
-    const builtin_messages::msg::Time & t_front = initial_pose_msg_ptr_array_.front()->header.stamp;
-    const builtin_messages::msg::Time & t_msg = initial_pose_msg_ptr->header.stamp;
-    if (t_front.sec > t_msg.sec || (t_front.sec == t.msg.sec && t_front.nanosec > t_msg.nanosec)) {
+    const builtin_interfaces::msg::Time & t_front = initial_pose_msg_ptr_array_.front()->header.stamp;
+    const builtin_interfaces::msg::Time & t_msg = initial_pose_msg_ptr->header.stamp;
+    if (t_front.sec > t_msg.sec || (t_front.sec == t_msg.sec && t_front.nanosec > t_msg.nanosec)) {
       initial_pose_msg_ptr_array_.clear();
     }
   }
@@ -270,7 +271,7 @@ void NDTScanMatcher::callbackMapPoints(
   new_ndt_ptr_->setResolution(resolution);
   new_ndt_ptr_->setMaximumIterations(max_iterations);
 
-  auto map_points_ptr = std::make_shared<pcl::PointCloud<PointTarget>>();
+  boost::shared_ptr<pcl::PointCloud<PointTarget>> map_points_ptr(new pcl::PointCloud<PointTarget>);
   pcl::fromROSMsg(*map_points_msg_ptr, *map_points_ptr);
   new_ndt_ptr_->setInputTarget(map_points_ptr);
   // create Thread
