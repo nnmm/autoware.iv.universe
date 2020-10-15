@@ -22,10 +22,11 @@ find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
-# find_package(ndt_pcl_modified REQUIRED)
-# find_package(ndt_omp REQUIRED)
-# find_package(ndt REQUIRED)
+find_package(ndt_pcl_modified REQUIRED)
+find_package(ndt_omp REQUIRED)
+find_package(ndt REQUIRED)
 find_package(autoware_localization_srvs REQUIRED)
+find_package(PCL REQUIRED COMPONENTS registration)
 
 include_directories(include)
 
@@ -47,9 +48,9 @@ set(NDT_SCAN_MATCHER_DEPENDENCIES
   visualization_msgs
   diagnostic_msgs
   pcl_conversions
-  # ndt_pcl_modified
-  # ndt_omp
-  # ndt
+  ndt_pcl_modified
+  ndt_omp
+  ndt
   autoware_localization_srvs
 )
 
@@ -58,14 +59,16 @@ ament_export_dependencies(${NDT_SCAN_MATCHER_DEPENDENCIES})
 
 install(
   TARGETS ndt_scan_matcher
-  DESTINATION lib/${PROJECT_NAME}
+  EXPORT export_ndt_scan_matcher
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
 )
 
 install(
-  DIRECTORY
-    launch
-    config
-  DESTINATION share/${PROJECT_NAME}
+  DIRECTORY launch
+  DESTINATION share
 )
 
 ament_package()
