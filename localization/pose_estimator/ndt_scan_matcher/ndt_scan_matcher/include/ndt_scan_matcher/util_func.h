@@ -23,23 +23,17 @@
 
 #include <tf2_eigen/tf2_eigen.h>
 
+#include <builtin_interfaces/msg/time.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/float32.hpp>
+#include <time_utils/time_utils.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
-
-std::chrono::system_clock::time_point from_message(builtin_interfaces::msg::Time t) noexcept
-{
-  // Clang system clock is microsecond precision rather than nanosecond
-  const auto dt_ns = std::chrono::seconds(t.sec) + std::chrono::nanoseconds(t.nanosec);
-  const auto dt = std::chrono::duration_cast<std::chrono::microseconds>(dt_ns);
-  return std::chrono::system_clock::time_point{} + dt;
-}
 
 // ref by http://takacity.blog.fc2.com/blog-entry-69.html
 std_msgs::msg::ColorRGBA ExchangeColorCrc(double x)
@@ -133,8 +127,8 @@ geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseWithCovarianceS
 geometry_msgs::msg::Twist calcTwist(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b)
 {
-  const std::chrono::microseconds dt_ms = from_message(pose_b.header.stamp) - from_message(pose_a.header.stamp);
-  const double dt = std::chrono::duration<double>(dt_ms).count();
+  const std::chrono::nanoseconds dt_ns = time_utils::from_message(pose_b.header.stamp) - time_utils::from_message(pose_a.header.stamp);
+  const double dt = std::chrono::duration<double>(dt_ns).count();
 
   if (dt == 0) {
     return geometry_msgs::msg::Twist();
@@ -166,16 +160,17 @@ geometry_msgs::msg::Twist calcTwist(
 
 void getNearestTimeStampPose(
   const std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> & pose_cov_msg_ptr_array,
-  const std::chrono::system_clock::time_point & time_stamp,
+  const builtin_interfaces::msg::Time & time_stamp,
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_old_pose_cov_msg_ptr,
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_new_pose_cov_msg_ptr)
 {
+  const auto time_chrono = time_utils::from_message(time_stamp);
   for (const auto & pose_cov_msg_ptr : pose_cov_msg_ptr_array) {
-    output_new_pose_cov_msg_ptr = pose_cov_msg_ptr;
-    if (from_message(output_new_pose_cov_msg_ptr->header.stamp) > time_stamp) {
+    output_new_pose_cov_msg_ptr = std::const_pointer_cast<geometry_msgs::msg::PoseWithCovarianceStamped>(pose_cov_msg_ptr);
+    const auto pose_time_chrono = time_utils::from_message(output_new_pose_cov_msg_ptr->header.stamp);
+    if (pose_time_chrono > time_chrono) {
       // TODO refactor
-      const auto ns_since_epoch = std::chrono::seconds(output_old_pose_cov_msg_ptr->header.stamp.sec) + std::chrono::nanoseconds(output_old_pose_cov_msg_ptr->header.stamp.nanosec);
-      if (output_old_pose_cov_msg_ptr->header.stamp == std::chrono::nanoseconds(0)) {
+      if (pose_time_chrono == std::chrono::system_clock::time_point {}) {
         output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
       }
       break;
@@ -189,10 +184,10 @@ void getNearestTimeStampPose(
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b,
-  const std::chrono::system_clock::time_point & time_stamp)
+  const builtin_interfaces::msg::Time & time_stamp)
 {
-  const std::chrono::system_clock::time_point time_a = from_message(pose_a->header.stamp);
-  const std::chrono::system_clock::time_point time_b = from_message(pose_b->header.stamp);
+  const builtin_interfaces::msg::Time time_a = time_utils::from_message(pose_a.header.stamp);
+  const builtin_interfaces::msg::Time time_b = time_utils::from_message(pose_b.header.stamp);
   if (
     pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 ||
     time_stamp.toSec() == 0) {
@@ -228,7 +223,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseWithCovarianceStamped & pose_a,
-  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const std::chrono::system_clock::time_point & time_stamp)
+  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const builtin_interfaces::msg::Time & time_stamp)
 {
   geometry_msgs::msg::PoseStamped tmp_pose_a;
   tmp_pose_a.header = pose_a.header;
@@ -243,10 +238,10 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
 void popOldPose(
   std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstPtr> & pose_cov_msg_ptr_array,
-  const std::chrono::system_clock::time_point & time_stamp)
+  const builtin_interfaces::msg::Time & time_stamp)
 {
   while (!pose_cov_msg_ptr_array.empty()) {
-    if (from_message(pose_cov_msg_ptr_array.front()->header.stamp) >= time_stamp) {
+    if (time_utils::from_message(pose_cov_msg_ptr_array.front()->header.stamp) >= time_stamp) {
       break;
     }
     pose_cov_msg_ptr_array.pop_front();
