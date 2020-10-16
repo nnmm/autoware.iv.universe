@@ -10,7 +10,6 @@
     <depend>autoware_localization_srvs</depend>
     <depend>diagnostic_msgs</depend>
     <depend>geometry_msgs</depend>
-    <depend>libpcl-all-dev</depend>
     <depend>nav_msgs</depend>
     <depend>ndt</depend>
     <depend>ndt_omp</depend>

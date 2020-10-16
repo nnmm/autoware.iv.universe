@@ -24,6 +24,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <tf2_eigen/tf2_eigen.h>
+#include <time_utils/time_utils.hpp>
 
 // TODO: #include <eigen_conversions/eigen_msg.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -31,13 +32,14 @@
 #include <ndt_scan_matcher/util_func.h>
 
 NDTScanMatcher::NDTScanMatcher()
-: Node("ndt_scan_matcher")
+: Node("ndt_scan_matcher"),
   tf2_listener_(tf2_buffer_),
-  tf2_broadcaster_(*this);
+  tf2_broadcaster_(*this),
   ndt_implement_type_(NDTImplementType::PCL_GENERIC),
   base_frame_("base_link"),
   ndt_base_frame_("ndt_base_link"),
   map_frame_("map"),
+
   converged_param_transform_probability_(4.5)
 {
   key_value_stdmap_["state"] = "Initializing";
@@ -57,12 +59,12 @@ NDTScanMatcher::NDTScanMatcher()
       new NormalDistributionsTransformOMP<PointSource, PointTarget>);
 
     int search_method = static_cast<int>(omp_params_.search_method);
-    private_nh_.getParam("omp_neighborhood_search_method", search_method);
+    search_method = this->declare_parameter("omp_neighborhood_search_method", search_method);
     omp_params_.search_method = static_cast<ndt_omp::NeighborSearchMethod>(search_method);
     // TODO check search_method is valid value.
     ndt_omp_ptr->setNeighborhoodSearchMethod(omp_params_.search_method);
 
-    private_nh_.getParam("omp_num_threads", omp_params_.num_threads);
+    omp_params_.num_threads = this->declare_parameter("omp_num_threads", omp_params_.num_threads);
     omp_params_.num_threads = std::max(omp_params_.num_threads, 1);
     ndt_omp_ptr->setNumThreads(omp_params_.num_threads);
 
@@ -73,22 +75,21 @@ NDTScanMatcher::NDTScanMatcher()
     ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
   }
 
-  int points_queue_size = 0;
-  private_nh_.getParam("input_sensor_points_queue_size", points_queue_size);
+  points_queue_size = this->declare_parameter("input_sensor_points_queue_size", 0);
   points_queue_size = std::max(points_queue_size, 0);
   RCLCPP_INFO(get_logger(), "points_queue_size: %d", points_queue_size);
 
-  private_nh_.getParam("base_frame", base_frame_);
+  base_frame_ = this->declare_parameter("base_frame", base_frame_);
   RCLCPP_INFO(get_logger(), "base_frame_id: %s", base_frame_.c_str());
 
   double trans_epsilon = ndt_ptr_->getTransformationEpsilon();
   double step_size = ndt_ptr_->getStepSize();
   double resolution = ndt_ptr_->getResolution();
   int max_iterations = ndt_ptr_->getMaximumIterations();
-  private_nh_.getParam("trans_epsilon", trans_epsilon);
-  private_nh_.getParam("step_size", step_size);
-  private_nh_.getParam("resolution", resolution);
-  private_nh_.getParam("max_iterations", max_iterations);
+  trans_epsilon = this->declare_parameter("trans_epsilon", trans_epsilon);
+  step_size = this->declare_parameter("step_size", step_size);
+  resolution = this->declare_parameter("resolution", resolution);
+  max_iterations = this->declare_parameter("max_iterations", max_iterations);
   ndt_ptr_->setTransformationEpsilon(trans_epsilon);
   ndt_ptr_->setStepSize(step_size);
   ndt_ptr_->setResolution(resolution);
@@ -294,7 +295,7 @@ void NDTScanMatcher::callbackSensorPoints(
 
   const std::string& sensor_frame = sensor_points_sensorTF_msg_ptr->header.frame_id;
   const auto sensor_ros_time = sensor_points_sensorTF_msg_ptr->header.stamp;
-  const std::chrono::system_clock::time_point sensor_chrono_time = from_message(sensor_ros_time);
+  const std::chrono::system_clock::time_point sensor_chrono_time = time_utils::from_message(sensor_ros_time);
 
   boost::shared_ptr<pcl::PointCloud<PointSource>> sensor_points_sensorTF_ptr(
     new pcl::PointCloud<PointSource>);

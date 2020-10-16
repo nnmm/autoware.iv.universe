@@ -160,42 +160,40 @@ geometry_msgs::msg::Twist calcTwist(
 
 void getNearestTimeStampPose(
   const std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> & pose_cov_msg_ptr_array,
-  const builtin_interfaces::msg::Time & time_stamp,
+  const std::chrono::system_clock::time_point & time_stamp,
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_old_pose_cov_msg_ptr,
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_new_pose_cov_msg_ptr)
 {
-  const auto time_chrono = time_utils::from_message(time_stamp);
   for (const auto & pose_cov_msg_ptr : pose_cov_msg_ptr_array) {
     output_new_pose_cov_msg_ptr = std::const_pointer_cast<geometry_msgs::msg::PoseWithCovarianceStamped>(pose_cov_msg_ptr);
-    const auto pose_time_chrono = time_utils::from_message(output_new_pose_cov_msg_ptr->header.stamp);
-    if (pose_time_chrono > time_chrono) {
+    const auto pose_time_stamp = time_utils::from_message(output_new_pose_cov_msg_ptr->header.stamp);
+    if (pose_time_stamp > time_stamp) {
       // TODO refactor
-      if (pose_time_chrono == std::chrono::system_clock::time_point {}) {
+      if (pose_time_stamp == std::chrono::system_clock::time_point {}) {
         output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
       }
       break;
     }
     output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
   }
-  // TODO(nnmm)
-  // std::cout << output_old_pose_cov_msg_ptr->header.stamp.toSec() - 1576563220 << std::endl;
-  // std::cout << output_new_pose_cov_msg_ptr->header.stamp.toSec() - 1576563220 << std::endl;
 }
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b,
-  const builtin_interfaces::msg::Time & time_stamp)
+  const std::chrono::system_clock::time_point & time_stamp)
 {
-  const builtin_interfaces::msg::Time time_a = time_utils::from_message(pose_a.header.stamp);
-  const builtin_interfaces::msg::Time time_b = time_utils::from_message(pose_b.header.stamp);
+  const std::chrono::system_clock::time_point epoch;  // corresponds to timestamp 0
+  const auto pose_a_time_stamp = time_utils::from_message(pose_a.header.stamp);
+  const auto pose_b_time_stamp = time_utils::from_message(pose_b.header.stamp);
   if (
-    pose_a.header.stamp.toSec() == 0 || pose_b.header.stamp.toSec() == 0 ||
-    time_stamp.toSec() == 0) {
+    (pose_a_time_stamp == epoch) ||
+    (pose_b_time_stamp == epoch) ||
+    (time_stamp == epoch)) {
     return geometry_msgs::msg::PoseStamped();
   }
 
   const auto twist = calcTwist(pose_a, pose_b);
-  const double dt = std::chrono::duration<double>(time_stamp - time_a).count();
+  const double dt = std::chrono::duration<double>(time_stamp - pose_a_time_stamp).count();
 
   const auto pose_a_rpy = getRPY(pose_a);
 
@@ -213,7 +211,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
   geometry_msgs::msg::PoseStamped pose;
   pose.header = pose_a.header;
-  pose.header.stamp = time_stamp;
+  pose.header.stamp = time_utils::to_message(time_stamp);
   pose.pose.position.x = xyz.x;
   pose.pose.position.y = xyz.y;
   pose.pose.position.z = xyz.z;
@@ -223,7 +221,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseWithCovarianceStamped & pose_a,
-  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const builtin_interfaces::msg::Time & time_stamp)
+  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const std::chrono::system_clock::time_point & time_stamp)
 {
   geometry_msgs::msg::PoseStamped tmp_pose_a;
   tmp_pose_a.header = pose_a.header;
@@ -237,8 +235,8 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 }
 
 void popOldPose(
-  std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstPtr> & pose_cov_msg_ptr_array,
-  const builtin_interfaces::msg::Time & time_stamp)
+  std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> & pose_cov_msg_ptr_array,
+  const std::chrono::system_clock::time_point & time_stamp)
 {
   while (!pose_cov_msg_ptr_array.empty()) {
     if (time_utils::from_message(pose_cov_msg_ptr_array.front()->header.stamp) >= time_stamp) {
