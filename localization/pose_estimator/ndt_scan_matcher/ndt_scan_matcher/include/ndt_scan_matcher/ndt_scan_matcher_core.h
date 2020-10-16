@@ -46,7 +46,7 @@
 #include <ndt/pcl_generic.h>
 #include <ndt/pcl_modified.h>
 
-class NDTScanMatcher: public rclcpp::Node
+class NDTScanMatcher : public rclcpp::Node
 {
   using PointSource = pcl::PointXYZ;
   using PointTarget = pcl::PointXYZ;
@@ -62,8 +62,8 @@ class NDTScanMatcher: public rclcpp::Node
   struct Particle
   {
     Particle(
-      const geometry_msgs::msg::Pose & a_initial_pose, const geometry_msgs::msg::Pose & a_result_pose,
-      const double a_score, const int a_iteration)
+      const geometry_msgs::msg::Pose & a_initial_pose,
+      const geometry_msgs::msg::Pose & a_result_pose, const double a_score, const int a_iteration)
     : initial_pose(a_initial_pose),
       result_pose(a_result_pose),
       score(a_score),
@@ -117,8 +117,10 @@ private:
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr sensor_aligned_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr ndt_pose_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr ndt_pose_with_covariance_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_with_covariance_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+    ndt_pose_with_covariance_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+    initial_pose_with_covariance_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr exe_time_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr transform_probability_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr iteration_num_pub_;
@@ -126,7 +128,8 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr initial_to_result_distance_old_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr initial_to_result_distance_new_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ndt_marker_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ndt_monte_carlo_initial_pose_marker_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    ndt_monte_carlo_initial_pose_marker_pub_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
 
   rclcpp::Service<autoware_localization_srvs::srv::PoseWithCovarianceStamped>::SharedPtr service_;

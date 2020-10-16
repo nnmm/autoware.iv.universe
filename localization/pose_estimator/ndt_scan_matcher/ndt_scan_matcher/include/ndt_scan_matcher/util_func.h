@@ -84,7 +84,10 @@ geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::Pose & pose)
   return rpy;
 }
 
-geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseStamped & pose) { return getRPY(pose.pose); }
+geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseStamped & pose)
+{
+  return getRPY(pose.pose);
+}
 
 geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseWithCovarianceStamped & pose)
 {
@@ -127,7 +130,8 @@ geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseWithCovarianceS
 geometry_msgs::msg::Twist calcTwist(
   const geometry_msgs::msg::PoseStamped & pose_a, const geometry_msgs::msg::PoseStamped & pose_b)
 {
-  const std::chrono::nanoseconds dt_ns = time_utils::from_message(pose_b.header.stamp) - time_utils::from_message(pose_a.header.stamp);
+  const std::chrono::nanoseconds dt_ns =
+    time_utils::from_message(pose_b.header.stamp) - time_utils::from_message(pose_a.header.stamp);
   const double dt = std::chrono::duration<double>(dt_ns).count();
 
   if (dt == 0) {
@@ -159,17 +163,20 @@ geometry_msgs::msg::Twist calcTwist(
 }
 
 void getNearestTimeStampPose(
-  const std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> & pose_cov_msg_ptr_array,
+  const std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> &
+    pose_cov_msg_ptr_array,
   const std::chrono::system_clock::time_point & time_stamp,
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_old_pose_cov_msg_ptr,
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & output_new_pose_cov_msg_ptr)
 {
   for (const auto & pose_cov_msg_ptr : pose_cov_msg_ptr_array) {
-    output_new_pose_cov_msg_ptr = std::const_pointer_cast<geometry_msgs::msg::PoseWithCovarianceStamped>(pose_cov_msg_ptr);
-    const auto pose_time_stamp = time_utils::from_message(output_new_pose_cov_msg_ptr->header.stamp);
+    output_new_pose_cov_msg_ptr =
+      std::const_pointer_cast<geometry_msgs::msg::PoseWithCovarianceStamped>(pose_cov_msg_ptr);
+    const auto pose_time_stamp =
+      time_utils::from_message(output_new_pose_cov_msg_ptr->header.stamp);
     if (pose_time_stamp > time_stamp) {
       // TODO refactor
-      if (pose_time_stamp == std::chrono::system_clock::time_point {}) {
+      if (pose_time_stamp == std::chrono::system_clock::time_point{}) {
         output_old_pose_cov_msg_ptr = output_new_pose_cov_msg_ptr;
       }
       break;
@@ -185,10 +192,7 @@ geometry_msgs::msg::PoseStamped interpolatePose(
   const std::chrono::system_clock::time_point epoch;  // corresponds to timestamp 0
   const auto pose_a_time_stamp = time_utils::from_message(pose_a.header.stamp);
   const auto pose_b_time_stamp = time_utils::from_message(pose_b.header.stamp);
-  if (
-    (pose_a_time_stamp == epoch) ||
-    (pose_b_time_stamp == epoch) ||
-    (time_stamp == epoch)) {
+  if ((pose_a_time_stamp == epoch) || (pose_b_time_stamp == epoch) || (time_stamp == epoch)) {
     return geometry_msgs::msg::PoseStamped();
   }
 
@@ -221,7 +225,8 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 
 geometry_msgs::msg::PoseStamped interpolatePose(
   const geometry_msgs::msg::PoseWithCovarianceStamped & pose_a,
-  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b, const std::chrono::system_clock::time_point & time_stamp)
+  const geometry_msgs::msg::PoseWithCovarianceStamped & pose_b,
+  const std::chrono::system_clock::time_point & time_stamp)
 {
   geometry_msgs::msg::PoseStamped tmp_pose_a;
   tmp_pose_a.header = pose_a.header;
@@ -235,7 +240,8 @@ geometry_msgs::msg::PoseStamped interpolatePose(
 }
 
 void popOldPose(
-  std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> & pose_cov_msg_ptr_array,
+  std::deque<geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr> &
+    pose_cov_msg_ptr_array,
   const std::chrono::system_clock::time_point & time_stamp)
 {
   while (!pose_cov_msg_ptr_array.empty()) {
@@ -247,7 +253,8 @@ void popOldPose(
 }
 
 static geometry_msgs::msg::PoseArray createRandomPoseArray(
-  const geometry_msgs::msg::PoseWithCovarianceStamped & base_pose_with_cov, const size_t particle_num)
+  const geometry_msgs::msg::PoseWithCovarianceStamped & base_pose_with_cov,
+  const size_t particle_num)
 {
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
