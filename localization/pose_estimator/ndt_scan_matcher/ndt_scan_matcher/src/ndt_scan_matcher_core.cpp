@@ -33,6 +33,7 @@
 
 NDTScanMatcher::NDTScanMatcher()
 : Node("ndt_scan_matcher"),
+  tf2_buffer_(this->get_clock()),
   tf2_listener_(tf2_buffer_),
   tf2_broadcaster_(*this),
   ndt_implement_type_(NDTImplementType::PCL_GENERIC),
@@ -181,36 +182,34 @@ void NDTScanMatcher::timerDiagnostic()
 }
 
 void NDTScanMatcher::serviceNDTAlign(
-    const autoware_localization_srvs::srv::PoseWithCovarianceStamped::Request::ConstSharedPtr req,
+    const autoware_localization_srvs::srv::PoseWithCovarianceStamped::Request::SharedPtr req,
     autoware_localization_srvs::srv::PoseWithCovarianceStamped::Response::SharedPtr res)
 {
   // get TF from pose_frame to map_frame
   auto TF_pose_to_map_ptr = std::make_shared<geometry_msgs::msg::TransformStamped>();
-  getTransform(map_frame_, req.pose_with_cov.header.frame_id, TF_pose_to_map_ptr);
+  getTransform(map_frame_, req->pose_with_cov.header.frame_id, TF_pose_to_map_ptr);
 
   // transform pose_frame to map_frame
   auto mapTF_initial_pose_msg_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
-  tf2::doTransform(req.pose_with_cov, *mapTF_initial_pose_msg_ptr, *TF_pose_to_map_ptr);
+  tf2::doTransform(req->pose_with_cov, *mapTF_initial_pose_msg_ptr, *TF_pose_to_map_ptr);
 
   if (ndt_ptr_->getInputTarget() == nullptr) {
     // TODO wait for map pointcloud
-    return false;
+    throw std::runtime_error("No InputTarget");
   }
 
   if (ndt_ptr_->getInputSource() == nullptr) {
     // TODO wait for sensor pointcloud
-    return false;
+    throw std::runtime_error("No InputSource");
   }
 
   // mutex Map
   std::lock_guard<std::mutex> lock(ndt_map_mtx_);
 
   key_value_stdmap_["state"] = "Aligning";
-  res.pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, *mapTF_initial_pose_msg_ptr);
+  res->pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, *mapTF_initial_pose_msg_ptr);
   key_value_stdmap_["state"] = "Sleeping";
-  res.pose_with_cov.pose.covariance = req.pose_with_cov.pose.covariance;
-
-  return true;
+  res->pose_with_cov.pose.covariance = req->pose_with_cov.pose.covariance;
 }
 
 void NDTScanMatcher::callbackInitialPose(
@@ -372,7 +371,7 @@ void NDTScanMatcher::callbackSensorPoints(
 
   const float transform_probability = ndt_ptr_->getTransformationProbability();
 
-  const size_t iteration_num = ndt_ptr_->getFinalNumIteration();
+  const int iteration_num = ndt_ptr_->getFinalNumIteration();
 
   bool is_converged = true;
   static size_t skipping_publish_num = 0;
