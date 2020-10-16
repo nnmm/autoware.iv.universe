@@ -39,12 +39,11 @@ NDTScanMatcher::NDTScanMatcher()
   base_frame_("base_link"),
   ndt_base_frame_("ndt_base_link"),
   map_frame_("map"),
-
   converged_param_transform_probability_(4.5)
 {
   key_value_stdmap_["state"] = "Initializing";
 
-  int ndt_implement_type_tmp = this->declare_parameter("ndt_implement_type");
+  int ndt_implement_type_tmp = this->declare_parameter("ndt_implement_type", 0);
   ndt_implement_type_ = static_cast<NDTImplementType>(ndt_implement_type_tmp);
   if (ndt_implement_type_ == NDTImplementType::PCL_GENERIC) {
     RCLCPP_INFO(get_logger(), "NDT Implement Type is PCL GENERIC");
@@ -75,7 +74,7 @@ NDTScanMatcher::NDTScanMatcher()
     ndt_ptr_.reset(new NormalDistributionsTransformPCLGeneric<PointSource, PointTarget>);
   }
 
-  points_queue_size = this->declare_parameter("input_sensor_points_queue_size", 0);
+  int points_queue_size = this->declare_parameter("input_sensor_points_queue_size", 0);
   points_queue_size = std::max(points_queue_size, 0);
   RCLCPP_INFO(get_logger(), "points_queue_size: %d", points_queue_size);
 
@@ -98,13 +97,13 @@ NDTScanMatcher::NDTScanMatcher()
     "trans_epsilon: %lf, step_size: %lf, resolution: %lf, max_iterations: %d", trans_epsilon,
     step_size, resolution, max_iterations);
 
-  private_nh_.getParam(
+  converged_param_transform_probability_ = this->declare_parameter(
     "converged_param_transform_probability", converged_param_transform_probability_);
 
   initial_pose_sub_ =
-    this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 100, std::bind(&NDTScanMatcher::callbackInitialPose, this));
-  map_points_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("pointcloud_map", 1, std::bind(&NDTScanMatcher::callbackMapPoints, this));
-  sensor_points_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("points_raw", 1, std::bind(&NDTScanMatcher::callbackSensorPoints, this));
+    this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 100, std::bind(&NDTScanMatcher::callbackInitialPose, this, std::placeholders::_1));
+  map_points_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("pointcloud_map", 1, std::bind(&NDTScanMatcher::callbackMapPoints, this, std::placeholders::_1));
+  sensor_points_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("points_raw", 1, std::bind(&NDTScanMatcher::callbackSensorPoints, this, std::placeholders::_1));
 
   sensor_aligned_pose_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("points_aligned", 10);
   ndt_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("ndt_pose", 10);
@@ -126,7 +125,7 @@ NDTScanMatcher::NDTScanMatcher()
     this->create_publisher<visualization_msgs::msg::MarkerArray>("monte_carlo_initial_pose_marker", 10);
   diagnostics_pub_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
 
-  service_ = this->create_service<autoware_localization_srvs::srv::PoseWithCovarianceStamped>("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
+  service_ = this->create_service<autoware_localization_srvs::srv::PoseWithCovarianceStamped>("ndt_align_srv", std::bind(&NDTScanMatcher::serviceNDTAlign, this, std::placeholders::_1, std::placeholders::_2));
   // setup dynamic reconfigure server
   // f_ = boost::bind(&NDTScanMatcher::configCallback, this, _1, _2);
   // server_.setCallback(f_);
@@ -181,9 +180,9 @@ void NDTScanMatcher::timerDiagnostic()
   }
 }
 
-bool NDTScanMatcher::serviceNDTAlign(
-  autoware_localization_srvs::srv::PoseWithCovarianceStamped::Request & req,
-  autoware_localization_srvs::srv::PoseWithCovarianceStamped::Response & res)
+void NDTScanMatcher::serviceNDTAlign(
+    const autoware_localization_srvs::srv::PoseWithCovarianceStamped::Request::ConstSharedPtr req,
+    autoware_localization_srvs::srv::PoseWithCovarianceStamped::Response::SharedPtr res)
 {
   // get TF from pose_frame to map_frame
   auto TF_pose_to_map_ptr = std::make_shared<geometry_msgs::msg::TransformStamped>();
@@ -507,7 +506,6 @@ void NDTScanMatcher::callbackSensorPoints(
       2.0));
   initial_to_result_distance_new_pub_->publish(initial_to_result_distance_new_msg);
 
-  key_value_stdmap_["seq"] = std::to_string(sensor_points_sensorTF_msg_ptr->header.seq);
   key_value_stdmap_["transform_probability"] = std::to_string(transform_probability);
   key_value_stdmap_["iteration_num"] = std::to_string(iteration_num);
   key_value_stdmap_["skipping_publish_num"] = std::to_string(skipping_publish_num);

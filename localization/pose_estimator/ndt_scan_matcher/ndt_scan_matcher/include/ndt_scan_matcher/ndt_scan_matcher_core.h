@@ -81,9 +81,9 @@ public:
   ~NDTScanMatcher();
 
 private:
-  bool serviceNDTAlign(
-    autoware_localization_srvs::srv::PoseWithCovarianceStamped::Request & req,
-    autoware_localization_srvs::srv::PoseWithCovarianceStamped::Response & res);
+  void serviceNDTAlign(
+    const autoware_localization_srvs::srv::PoseWithCovarianceStamped::Request::ConstSharedPtr req,
+    autoware_localization_srvs::srv::PoseWithCovarianceStamped::Response::SharedPtr res);
 
   void callbackMapPoints(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud2_msg_ptr);
   void callbackSensorPoints(sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud2_msg_ptr);
