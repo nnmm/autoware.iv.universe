@@ -92,16 +92,6 @@ endif()
 # 'ndt_omp' was not found" – so we need to add ndt_omp with
 # `target_link_libraries(align PUBLIC ndt_omp)` instead.
 target_link_libraries(align PRIVATE ndt_omp)
-# Problem two: Now 
-# That links in the components from `find_package()` above, so that's good. Now
-# we're left with `ament_target_dependencies(align PUBLIC OpenMP)`
-# ld complains "cannot find -lOpenMP"
-# ament_target_dependencies(align PUBLIC OpenMP)
-#target_link_libraries(align PUBLIC OpenMP)
-# ament_target_dependencies(align PUBLIC OpenMP)
-# Also link ndt_omp separately because ament_target_dependencies doesn't support
-# depending on a library target from the same package
-
 
 install(
   DIRECTORY include/
