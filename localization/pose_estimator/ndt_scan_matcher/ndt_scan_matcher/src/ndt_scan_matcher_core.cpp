@@ -28,6 +28,7 @@
 
 // TODO: #include <eigen_conversions/eigen_msg.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <ndt_scan_matcher/util_func.h>
 
