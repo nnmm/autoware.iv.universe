@@ -47,17 +47,17 @@ using Polygon2d =
 
 enum class State { PASS, STOP };
 
-class SurroundObstacleCheckerNode
+class SurroundObstacleCheckerNode : public rclcpp::Node
 {
 public:
   SurroundObstacleCheckerNode();
 
 private:
-  void pathCallback(const autoware_planning_msgs::msg::Trajectory::ConstSharedPtr & input_msg);
-  void pointCloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr & input_msg);
+  void pathCallback(const autoware_planning_msgs::msg::Trajectory::ConstSharedPtr input_msg);
+  void pointCloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr input_msg);
   void dynamicObjectCallback(
-    const autoware_perception_msgs::msg::DynamicObjectArray::ConstSharedPtr & input_msg);
-  void currentVelocityCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & input_msg);
+    const autoware_perception_msgs::msg::DynamicObjectArray::ConstSharedPtr input_msg);
+  void currentVelocityCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr input_msg);
   void insertStopVelocity(const size_t closest_idx, autoware_planning_msgs::msg::Trajectory * traj);
   bool convertPose(
     const geometry_msgs::msg::Pose & pose, const std::string & source, const std::string & target,
@@ -94,14 +94,14 @@ private:
   rclcpp::Publisher<autoware_planning_msgs::msg::Trajectory>::SharedPtr path_pub_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr stop_reason_diag_pub_;
   std::shared_ptr<SurroundObstacleCheckerDebugNode> debug_ptr_;
-  tf2_ros::Buffer tf_buffer_;
+  tf2::BufferCore tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
   // parameter
   geometry_msgs::msg::TwistStamped::ConstSharedPtr current_velocity_ptr_;
   sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud_ptr_;
   autoware_perception_msgs::msg::DynamicObjectArray::ConstSharedPtr object_ptr_;
-  VehicleInfo vehicle_info_;
+  vehicle_info_util::VehicleInfo vehicle_info_;
   Polygon2d self_poly_;
   bool use_pointcloud_;
   bool use_dynamic_object_;
