@@ -15,15 +15,14 @@
  */
 
 #include <rclcpp/rclcpp.hpp>
+
 #include <surround_obstacle_checker/node.hpp>
 
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv, "surround_obstacle_checker_node");
-
-  SurroundObstacleCheckerNode node;
-
-  rclcpp::spin();
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<SurroundObstacleCheckerNode>());
+  rclcpp::shutdown();
 
   return 0;
 }

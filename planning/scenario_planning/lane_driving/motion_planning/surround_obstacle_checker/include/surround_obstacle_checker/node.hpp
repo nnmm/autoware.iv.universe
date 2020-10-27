@@ -23,12 +23,12 @@
 #include <diagnostic_msgs/msg/key_value.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <tf2/utils.h>
 #include <tf2_ros/transform_listener.h>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <vehicle_info_util/vehicle_info.hpp>
 #include <boost/assert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -87,12 +87,12 @@ private:
    * ROS
    */
   // publisher and subscriber
-  rclcpp::Subscription<TODO(copy type from initialization)>::SharedPtr path_sub_;
-  rclcpp::Subscription<TODO(copy type from initialization)>::SharedPtr current_velocity_sub_;
-  rclcpp::Subscription<TODO(copy type from initialization)>::SharedPtr dynamic_object_sub_;
-  rclcpp::Subscription<TODO(copy type from initialization)>::SharedPtr pointcloud_sub_;
-  rclcpp::Publisher<TODO(copy type from initialization)>::SharedPtr path_pub_;
-  rclcpp::Publisher<TODO(copy type from initialization)>::SharedPtr stop_reason_diag_pub_;
+  rclcpp::Subscription<autoware_planning_msgs::msg::Trajectory>::SharedPtr path_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
+  rclcpp::Subscription<autoware_perception_msgs::msg::DynamicObjectArray>::SharedPtr dynamic_object_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr current_velocity_sub_;
+  rclcpp::Publisher<autoware_planning_msgs::msg::Trajectory>::SharedPtr path_pub_;
+  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr stop_reason_diag_pub_;
   std::shared_ptr<SurroundObstacleCheckerDebugNode> debug_ptr_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
@@ -101,8 +101,7 @@ private:
   geometry_msgs::msg::TwistStamped::ConstSharedPtr current_velocity_ptr_;
   sensor_msgs::msg::PointCloud2::ConstSharedPtr pointcloud_ptr_;
   autoware_perception_msgs::msg::DynamicObjectArray::ConstSharedPtr object_ptr_;
-  double wheel_base_, front_overhang_, rear_overhang_, left_overhang_, right_overhang_,
-    wheel_tread_, vehicle_width_, vehicle_length_;
+  VehicleInfo vehicle_info_;
   Polygon2d self_poly_;
   bool use_pointcloud_;
   bool use_dynamic_object_;

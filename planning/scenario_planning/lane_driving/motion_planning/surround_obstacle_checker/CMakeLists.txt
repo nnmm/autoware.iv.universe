@@ -9,18 +9,80 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wno-unused-parameter -Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake_auto REQUIRED)
+find_package(ament_cmake REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common) 
+find_package(autoware_perception_msgs REQUIRED)
+find_package(autoware_planning_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(vehicle_info_util REQUIRED)
 
-ament_auto_find_build_dependencies()
-
-ament_auto_add_executable(surround_obstacle_checker_node
+add_executable(${PROJECT_NAME}
   src/debug_marker.cpp
   src/node.cpp
   src/main.cpp
 )
 
-ament_auto_package(INSTALL_TO_SHARE
-  launch config
-) 
+set(${PROJECT_NAME}_DEPENDENCIES
+  eigen3_cmake_module
+  Eigen3
+  PCL
+  autoware_perception_msgs
+  autoware_planning_msgs
+  rclcpp
+  sensor_msgs
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+  tf2_eigen
+  tf2_ros
+  visualization_msgs
+  pcl_conversions
+  vehicle_info_util
+)
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# TODO: PUBLIC or not? Remove PCL?
+ament_target_dependencies(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_DEPENDENCIES})
+
+ament_export_targets(EXPORT_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${${PROJECT_NAME}_DEPENDENCIES})
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${PCL_DEFINITIONS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${PCL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${PCL_LIBRARIES})
+target_link_directories(${PROJECT_NAME} PUBLIC ${PCL_LIBRARY_DIRS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT EXPORT_${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+ament_package() 

@@ -17,12 +17,12 @@
 #include <surround_obstacle_checker/debug_marker.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-SurroundObstacleCheckerDebugNode::SurroundObstacleCheckerDebugNode(const double base_link2front)
-: nh_(), pnh_("~"), base_link2front_(base_link2front)
+SurroundObstacleCheckerDebugNode::SurroundObstacleCheckerDebugNode(const double base_link2front, rclcpp::Clock::SharedPtr clock, rclcpp::node_interfaces::NodeTopicsInterface& node_topics)
+: base_link2front_(base_link2front), clock_(clock)
 {
-  debug_viz_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("debug/marker", 1);
+  debug_viz_pub_ = node_topics.create_publisher<visualization_msgs::msg::MarkerArray>("debug/marker", 1);
   stop_reason_pub_ =
-    this->create_publisher<autoware_planning_msgs::msg::StopReasonArray>("output/stop_reasons", 1);
+    node_topics.create_publisher<autoware_planning_msgs::msg::StopReasonArray>("output/stop_reasons", 1);
 }
 
 bool SurroundObstacleCheckerDebugNode::pushPose(
@@ -67,7 +67,7 @@ void SurroundObstacleCheckerDebugNode::publish()
 visualization_msgs::msg::MarkerArray SurroundObstacleCheckerDebugNode::makeVisualizationMarker()
 {
   visualization_msgs::msg::MarkerArray msg;
-  rclcpp::Time current_time = this->now();
+  rclcpp::Time current_time = this->clock_->now();
   tf2::Transform tf_base_link2front(
     tf2::Quaternion(0.0, 0.0, 0.0, 1.0), tf2::Vector3(base_link2front_, 0.0, 0.0));
 
@@ -157,7 +157,7 @@ autoware_planning_msgs::msg::StopReasonArray SurroundObstacleCheckerDebugNode::m
   //create header
   std_msgs::msg::Header header;
   header.frame_id = "map";
-  header.stamp = this->now();
+  header.stamp = this->clock_->now();
 
   //create stop reason stamped
   autoware_planning_msgs::msg::StopReason stop_reason_msg;

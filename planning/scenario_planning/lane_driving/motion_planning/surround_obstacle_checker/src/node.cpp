@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+#include <functional>
+
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
+#include <pcl/point_cloud.h>
+#include <pcl/common/transforms.h>
 #include <tf2_eigen/tf2_eigen.h>
 
 #include <surround_obstacle_checker/node.hpp>
@@ -26,36 +28,20 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-template <class T>
-T waitForParam(const rclcpp::NodeHandle & nh, const std::string & key)
-{
-  T value;
-  rclcpp::Rate rate(1.0);
-
-  while (rclcpp::ok()) {
-    const auto result = nh.getParam(key, value);
-    if (result) {
-      return value;
-    }
-
-    RCLCPP_WARN(get_logger(), "waiting for parameter `%s` ...", key.c_str());
-    rate.sleep();
-  }
-
-  return {};
-}
+using std::placeholders::_1;
 
 SurroundObstacleCheckerNode::SurroundObstacleCheckerNode()
-: nh_(), pnh_("~"), tf_listener_(tf_buffer_)
+: Node("surround_obstacle_checker_node"), tf_listener_(tf_buffer_), vehicle_info_(VehicleInfo::from_parameters(*this))
 {
   // Parameters
-  pnh_.param<bool>("use_pointcloud", use_pointcloud_, true);
-  pnh_.param<bool>("use_dynamic_object", use_dynamic_object_, true);
-  pnh_.param<double>("surround_check_distance", surround_check_distance_, 2.0);
-  pnh_.param<double>("surround_check_recover_distance", surround_check_recover_distance_, 2.5);
-  pnh_.param<double>("state_clear_time", state_clear_time_, 2.0);
-  pnh_.param<double>("stop_state_ego_speed", stop_state_ego_speed_, 0.1);
+  use_pointcloud_ = this->declare_parameter("use_pointcloud", true);
+  use_dynamic_object_ = this->declare_parameter("use_dynamic_object", true);
+  surround_check_distance_ = this->declare_parameter("surround_check_distance", 2.0);
+  surround_check_recover_distance_ = this->declare_parameter("surround_check_recover_distance", 2.5);
+  state_clear_time_ = this->declare_parameter("state_clear_time", 2.0);
+  stop_state_ego_speed_ = this->declare_parameter("stop_state_ego_speed", 0.1);
   wheel_base_ = waitForParam<double>(pnh_, "/vehicle_info/wheel_base");
+  ve
   front_overhang_ = waitForParam<double>(pnh_, "/vehicle_info/front_overhang");
   rear_overhang_ = waitForParam<double>(pnh_, "/vehicle_info/rear_overhang");
   left_overhang_ = waitForParam<double>(pnh_, "/vehicle_info/left_overhang");
@@ -63,7 +49,7 @@ SurroundObstacleCheckerNode::SurroundObstacleCheckerNode()
   wheel_tread_ = waitForParam<double>(pnh_, "/vehicle_info/wheel_tread");
   vehicle_width_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_width");
   vehicle_length_ = waitForParam<double>(pnh_, "/vehicle_info/vehicle_length");
-  debug_ptr_ = std::make_shared<SurroundObstacleCheckerDebugNode>(wheel_base_ + front_overhang_);
+  debug_ptr_ = std::make_shared<SurroundObstacleCheckerDebugNode>(wheel_base_ + front_overhang_, this->get_clock(), *this->get_node_topics_interface());
   self_poly_ = createSelfPolygon();
 
   // Publishers
@@ -73,13 +59,13 @@ SurroundObstacleCheckerNode::SurroundObstacleCheckerNode()
 
   // Subscriber
   path_sub_ =
-    this->create_subscription<TODO>("input/trajectory", 1, &SurroundObstacleCheckerNode::pathCallback, this);
+    this->create_subscription<autoware_planning_msgs::msg::Trajectory>("input/trajectory", 1, std::bind(&SurroundObstacleCheckerNode::pathCallback, this, _1));
   pointcloud_sub_ =
-    this->create_subscription<TODO>("input/pointcloud", 1, &SurroundObstacleCheckerNode::pointCloudCallback, this);
+    this->create_subscription<sensor_msgs::msg::PointCloud2>("input/pointcloud", 1, std::bind(&SurroundObstacleCheckerNode::pointCloudCallback, this, _1));
   dynamic_object_sub_ =
-    this->create_subscription<TODO>("input/objects", 1, &SurroundObstacleCheckerNode::dynamicObjectCallback, this);
+    this->create_subscription<autoware_perception_msgs::msg::DynamicObjectArray>("input/objects", 1, std::bind(&SurroundObstacleCheckerNode::dynamicObjectCallback, this, _1));
   current_velocity_sub_ =
-    this->create_subscription<TODO>("input/twist", 1, &SurroundObstacleCheckerNode::currentVelocityCallback, this);
+    this->create_subscription<geometry_msgs::msg::TwistStamped>("input/twist", 1, std::bind(&SurroundObstacleCheckerNode::currentVelocityCallback, this, _1));
 }
 
 void SurroundObstacleCheckerNode::pathCallback(
