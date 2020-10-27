@@ -15,11 +15,11 @@
  */
 
 #pragma once
-#include <autoware_planning_msgs/StopReasonArray.h>
-#include <geometry_msgs/Pose.h>
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <autoware_planning_msgs/msg/stop_reason_array.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 #include <string>
 
 enum class PoseType : int8_t { NoStart = 0 };
@@ -29,20 +29,18 @@ class SurroundObstacleCheckerDebugNode
 public:
   explicit SurroundObstacleCheckerDebugNode(const double base_link2front);
 
-  bool pushPose(const geometry_msgs::Pose & pose, const PoseType & type);
-  bool pushObstaclePoint(const geometry_msgs::Point & obstacle_point, const PointType & type);
+  bool pushPose(const geometry_msgs::msg::Pose & pose, const PoseType & type);
+  bool pushObstaclePoint(const geometry_msgs::msg::Point & obstacle_point, const PointType & type);
   void publish();
 
 private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  ros::Publisher debug_viz_pub_;
-  ros::Publisher stop_reason_pub_;
+  rclcpp::Publisher<TODO(copy type from initialization)>::SharedPtr debug_viz_pub_;
+  rclcpp::Publisher<TODO(copy type from initialization)>::SharedPtr stop_reason_pub_;
   double base_link2front_;
 
-  visualization_msgs::MarkerArray makeVisualizationMarker();
-  autoware_planning_msgs::StopReasonArray makeStopReasonArray();
+  visualization_msgs::msg::MarkerArray makeVisualizationMarker();
+  autoware_planning_msgs::msg::StopReasonArray makeStopReasonArray();
 
-  std::shared_ptr<geometry_msgs::Point> stop_obstacle_point_ptr_;
-  std::shared_ptr<geometry_msgs::Pose> stop_pose_ptr_;
+  std::shared_ptr<geometry_msgs::msg::Point> stop_obstacle_point_ptr_;
+  std::shared_ptr<geometry_msgs::msg::Pose> stop_pose_ptr_;
 };
