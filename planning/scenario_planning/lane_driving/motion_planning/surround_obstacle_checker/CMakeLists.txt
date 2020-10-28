@@ -15,6 +15,7 @@ find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common) 
 find_package(autoware_perception_msgs REQUIRED)
 find_package(autoware_planning_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -38,6 +39,7 @@ set(${PROJECT_NAME}_DEPENDENCIES
   PCL
   autoware_perception_msgs
   autoware_planning_msgs
+  diagnostic_msgs
   rclcpp
   sensor_msgs
   std_msgs

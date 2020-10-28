@@ -29,7 +29,8 @@ enum class PointType : int8_t { NoStart = 0 };
 class SurroundObstacleCheckerDebugNode
 {
 public:
-  explicit SurroundObstacleCheckerDebugNode(const double base_link2front, const rclcpp::Clock::SharedPtr clock, rclcpp::Node& node);
+  explicit SurroundObstacleCheckerDebugNode(
+    const double base_link2front, const rclcpp::Clock::SharedPtr clock, rclcpp::Node & node);
 
   bool pushPose(const geometry_msgs::msg::Pose & pose, const PoseType & type);
   bool pushObstaclePoint(const geometry_msgs::msg::Point & obstacle_point, const PointType & type);

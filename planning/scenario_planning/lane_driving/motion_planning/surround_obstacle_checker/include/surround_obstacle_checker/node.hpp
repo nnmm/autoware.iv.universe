@@ -19,22 +19,22 @@
 #include <memory>
 #include <string>
 
-#include <diagnostic_msgs/msg/diagnostic_status.hpp>
-#include <diagnostic_msgs/msg/key_value.hpp>
-#include <geometry_msgs/msg/twist_stamped.hpp>
 #include <pcl_conversions/pcl_conversions.h>
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <tf2/utils.h>
 #include <tf2_ros/transform_listener.h>
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <vehicle_info_util/vehicle_info.hpp>
 #include <boost/assert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <diagnostic_msgs/msg/key_value.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <vehicle_info_util/vehicle_info.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <autoware_perception_msgs/msg/dynamic_object_array.hpp>
 #include <autoware_planning_msgs/msg/trajectory.hpp>
@@ -73,10 +73,12 @@ private:
   bool isObstacleFound(const double min_dist_to_obj);
   bool isStopRequired(const bool is_obstacle_found, const bool is_stopped);
   size_t getClosestIdx(
-    const autoware_planning_msgs::msg::Trajectory & traj, const geometry_msgs::msg::Pose current_pose);
+    const autoware_planning_msgs::msg::Trajectory & traj,
+    const geometry_msgs::msg::Pose current_pose);
   bool checkStop(const autoware_planning_msgs::msg::TrajectoryPoint & closest_point);
   Polygon2d createSelfPolygon();
-  Polygon2d createObjPolygon(const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Vector3 & size);
+  Polygon2d createObjPolygon(
+    const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Vector3 & size);
   Polygon2d createObjPolygon(
     const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Polygon & footprint);
   diagnostic_msgs::msg::DiagnosticStatus makeStopReasonDiag(
@@ -89,12 +91,13 @@ private:
   // publisher and subscriber
   rclcpp::Subscription<autoware_planning_msgs::msg::Trajectory>::SharedPtr path_sub_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
-  rclcpp::Subscription<autoware_perception_msgs::msg::DynamicObjectArray>::SharedPtr dynamic_object_sub_;
+  rclcpp::Subscription<autoware_perception_msgs::msg::DynamicObjectArray>::SharedPtr
+    dynamic_object_sub_;
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr current_velocity_sub_;
   rclcpp::Publisher<autoware_planning_msgs::msg::Trajectory>::SharedPtr path_pub_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr stop_reason_diag_pub_;
   std::shared_ptr<SurroundObstacleCheckerDebugNode> debug_ptr_;
-  tf2::BufferCore tf_buffer_;
+  tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
 
   // parameter

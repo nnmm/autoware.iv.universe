@@ -16,10 +16,10 @@
 
 #include <functional>
 
+#include <pcl/common/transforms.h>
+#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_cloud.h>
-#include <pcl/common/transforms.h>
 #include <tf2_eigen/tf2_eigen.h>
 
 #include <surround_obstacle_checker/node.hpp>
@@ -29,49 +29,63 @@
 #include <Eigen/Geometry>
 
 SurroundObstacleCheckerNode::SurroundObstacleCheckerNode()
-: Node("surround_obstacle_checker_node"), tf_listener_(tf_buffer_), vehicle_info_(vehicle_info_util::VehicleInfo::from_parameters(*this))
+: Node("surround_obstacle_checker_node"),
+  tf_buffer_(this->get_clock()),
+  tf_listener_(tf_buffer_),
+  vehicle_info_(vehicle_info_util::VehicleInfo::create(*this))
 {
   // Parameters
   use_pointcloud_ = this->declare_parameter("use_pointcloud", true);
   use_dynamic_object_ = this->declare_parameter("use_dynamic_object", true);
   surround_check_distance_ = this->declare_parameter("surround_check_distance", 2.0);
-  surround_check_recover_distance_ = this->declare_parameter("surround_check_recover_distance", 2.5);
+  surround_check_recover_distance_ =
+    this->declare_parameter("surround_check_recover_distance", 2.5);
   state_clear_time_ = this->declare_parameter("state_clear_time", 2.0);
   stop_state_ego_speed_ = this->declare_parameter("stop_state_ego_speed", 0.1);
-  debug_ptr_ = std::make_shared<SurroundObstacleCheckerDebugNode>(vehicle_info_.max_longitudinal_offset_m_, this->get_clock(), *this);
+  debug_ptr_ = std::make_shared<SurroundObstacleCheckerDebugNode>(
+    vehicle_info_.max_longitudinal_offset_m_, this->get_clock(), *this);
   self_poly_ = createSelfPolygon();
 
   // Publishers
-  path_pub_ = this->create_publisher<autoware_planning_msgs::msg::Trajectory>("output/trajectory", 1);
+  path_pub_ =
+    this->create_publisher<autoware_planning_msgs::msg::Trajectory>("output/trajectory", 1);
   stop_reason_diag_pub_ =
     this->create_publisher<diagnostic_msgs::msg::DiagnosticStatus>("output/no_start_reason", 1);
 
   // Subscriber
-  path_sub_ =
-    this->create_subscription<autoware_planning_msgs::msg::Trajectory>("input/trajectory", 1, std::bind(&SurroundObstacleCheckerNode::pathCallback, this, std::placeholders::_1));
-  pointcloud_sub_ =
-    this->create_subscription<sensor_msgs::msg::PointCloud2>("input/pointcloud", 1, std::bind(&SurroundObstacleCheckerNode::pointCloudCallback, this, std::placeholders::_1));
+  path_sub_ = this->create_subscription<autoware_planning_msgs::msg::Trajectory>(
+    "input/trajectory", 1,
+    std::bind(&SurroundObstacleCheckerNode::pathCallback, this, std::placeholders::_1));
+  pointcloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    "input/pointcloud", 1,
+    std::bind(&SurroundObstacleCheckerNode::pointCloudCallback, this, std::placeholders::_1));
   dynamic_object_sub_ =
-    this->create_subscription<autoware_perception_msgs::msg::DynamicObjectArray>("input/objects", 1, std::bind(&SurroundObstacleCheckerNode::dynamicObjectCallback, this, std::placeholders::_1));
-  current_velocity_sub_ =
-    this->create_subscription<geometry_msgs::msg::TwistStamped>("input/twist", 1, std::bind(&SurroundObstacleCheckerNode::currentVelocityCallback, this, std::placeholders::_1));
+    this->create_subscription<autoware_perception_msgs::msg::DynamicObjectArray>(
+      "input/objects", 1,
+      std::bind(&SurroundObstacleCheckerNode::dynamicObjectCallback, this, std::placeholders::_1));
+  current_velocity_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+    "input/twist", 1,
+    std::bind(&SurroundObstacleCheckerNode::currentVelocityCallback, this, std::placeholders::_1));
 }
 
 void SurroundObstacleCheckerNode::pathCallback(
   const autoware_planning_msgs::msg::Trajectory::ConstSharedPtr input_msg)
 {
   if (use_pointcloud_ && !pointcloud_ptr_) {
-    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1.0, "waiting for pointcloud info...");
+    RCLCPP_WARN_THROTTLE(
+      this->get_logger(), *this->get_clock(), 1.0, "waiting for pointcloud info...");
     return;
   }
 
   if (use_dynamic_object_ && !object_ptr_) {
-    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1.0, "waiting for dynamic object info...");
+    RCLCPP_WARN_THROTTLE(
+      this->get_logger(), *this->get_clock(), 1.0, "waiting for dynamic object info...");
     return;
   }
 
   if (!current_velocity_ptr_) {
-    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1.0, "waiting for current velocity...");
+    RCLCPP_WARN_THROTTLE(
+      this->get_logger(), *this->get_clock(), 1.0, "waiting for current velocity...");
     return;
   }
 
@@ -106,9 +120,9 @@ void SurroundObstacleCheckerNode::pathCallback(
     state_ = State::STOP;
 
     // do not start when there is a obstacle near the ego vehicle.
-    RCLCPP_WARN_STREAM_THROTTLE(get_logger(), *this->get_clock(), 
-      0.5, "[surround_obstacle_checker]: "
-             << "do not start because there is obstacle near the ego vehicle.");
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *this->get_clock(), 0.5,
+      "do not start because there is obstacle near the ego vehicle.");
     insertStopVelocity(closest_idx, &output_msg);
 
     // visualization for debug
@@ -160,15 +174,22 @@ bool SurroundObstacleCheckerNode::getPose(
 {
   try {
     // get transform from source to target
-    geometry_msgs::msg::TransformStamped ros_src2tgt;
-    ros_src2tgt = tf_buffer_.lookupTransform(source, target, time, rclcpp::Duration(0.1));
+    auto tf_future = tf_buffer_.waitForTransform(
+      source, target, tf2::TimePointZero, tf2::durationFromSec(0.0), [](auto &) {});
+    auto status = tf_future.wait_for(tf2::durationFromSec(0.1));
+    if (status != std::future_status::ready) {
+      RCLCPP_WARN_SKIPFIRST_THROTTLE(
+        get_logger(), *get_clock(), 3.0, "cannot get map to base_link transform.");
+      return false;
+    }
+    geometry_msgs::msg::TransformStamped ros_src2tgt = tf_future.get();
     // convert geometry_msgs::msg::Transform to geometry_msgs::msg::Pose
     tf2::Transform transform;
     tf2::fromMsg(ros_src2tgt.transform, transform);
     tf2::toMsg(transform, pose);
   } catch (tf2::TransformException & ex) {
-    RCLCPP_WARN_STREAM_THROTTLE(get_logger(), *this->get_clock(), 
-      0.5, "[surround_obstacle_checker]: cannot get tf from " << source << " to " << target);
+    RCLCPP_WARN_STREAM_THROTTLE(
+      get_logger(), *this->get_clock(), 0.5, "cannot get tf from " << source << " to " << target);
     return false;
   }
   return true;
@@ -188,8 +209,8 @@ bool SurroundObstacleCheckerNode::convertPose(
     ros_src2tgt = tf_buffer_.lookupTransform(source, target, time, rclcpp::Duration(0.1));
     tf2::fromMsg(ros_src2tgt.transform, src2tgt);
   } catch (tf2::TransformException & ex) {
-    RCLCPP_WARN_STREAM_THROTTLE(get_logger(), *this->get_clock(), 
-      0.5, "[surround obstacle chekcer] cannot get tf from " << source << " to " << target);
+    RCLCPP_WARN_STREAM_THROTTLE(
+      get_logger(), *this->get_clock(), 0.5, "cannot get tf from " << source << " to " << target);
     return false;
   }
 
@@ -204,7 +225,6 @@ size_t SurroundObstacleCheckerNode::getClosestIdx(
 {
   double min_dist = std::numeric_limits<double>::max();
   size_t min_dist_idx = 0;
-  bool is_init = false;
   for (size_t i = 0; i < traj.points.size(); ++i) {
     const double x = traj.points.at(i).pose.position.x - current_pose.position.x;
     const double y = traj.points.at(i).pose.position.y - current_pose.position.y;
@@ -239,27 +259,27 @@ void SurroundObstacleCheckerNode::getNearestObstacleByPointCloud(
       "base_link", pointcloud_ptr_->header.frame_id, pointcloud_ptr_->header.stamp,
       rclcpp::Duration(0.5));
   } catch (tf2::TransformException & ex) {
-    RCLCPP_WARN_STREAM_THROTTLE(get_logger(), *this->get_clock(), 
-      0.5, "[surround obstacle chekcer] failed to get base_link to "
-             << pointcloud_ptr_->header.frame_id << " transform.");
+    RCLCPP_WARN_STREAM_THROTTLE(
+      get_logger(), *this->get_clock(), 0.5,
+      "failed to get base_link to " << pointcloud_ptr_->header.frame_id << " transform.");
     return;
   }
 
-  Eigen::Matrix4f affine_matrix =
-    tf2::transformToEigen(transform_stamped.transform).matrix().cast<float>();
-  sensor_msgs::msg::PointCloud2 transformed_pointcloud;
-  pcl::transformPointCloud(affine_matrix, *pointcloud_ptr_, transformed_pointcloud);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(transformed_pointcloud, *pcl);
-
-  for (const auto p : *pcl) {
-    //create boost point
+  Eigen::Affine3f isometry = tf2::transformToEigen(transform_stamped.transform).cast<float>();
+  // This is because it's easier to iterate through this than a
+  // sensor_msgs/PointCloud2 message. Could be done once in pointCloudCallback
+  // as an optimization
+  pcl::PointCloud<pcl::PointXYZ> pcl;
+  pcl::fromROSMsg(*pointcloud_ptr_, pcl);
+  pcl::transformPointCloud(pcl, pcl, isometry);
+  for (const auto p : pcl) {
+    // create boost point
     Point2d boost_p(p.x, p.y);
 
-    //calc distance
+    // calc distance
     const double dist_to_obj = boost::geometry::distance(self_poly_, boost_p);
 
-    //get minimum distance to obj
+    // get minimum distance to obj
     if (dist_to_obj < *min_dist_to_obj) {
       *min_dist_to_obj = dist_to_obj;
       nearest_obj_point->x = p.x;
