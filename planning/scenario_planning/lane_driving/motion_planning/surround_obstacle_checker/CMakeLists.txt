@@ -27,7 +27,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(vehicle_info_util REQUIRED)
 
-add_executable(${PROJECT_NAME}
+add_executable(${PROJECT_NAME}_exe
   src/debug_marker.cpp
   src/node.cpp
   src/main.cpp
@@ -52,22 +52,18 @@ set(${PROJECT_NAME}_DEPENDENCIES
   vehicle_info_util
 )
 
-target_include_directories(${PROJECT_NAME}
+target_include_directories(${PROJECT_NAME}_exe
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
-# TODO: PUBLIC or not? Remove PCL?
-ament_target_dependencies(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_DEPENDENCIES})
+ament_target_dependencies(${PROJECT_NAME}_exe PUBLIC ${${PROJECT_NAME}_DEPENDENCIES})
 
-ament_export_targets(EXPORT_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(${${PROJECT_NAME}_DEPENDENCIES})
-
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${PCL_DEFINITIONS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${PCL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${PCL_LIBRARIES})
-target_link_directories(${PROJECT_NAME} PUBLIC ${PCL_LIBRARY_DIRS})
+target_compile_definitions(${PROJECT_NAME}_exe PUBLIC ${PCL_DEFINITIONS})
+target_include_directories(${PROJECT_NAME}_exe PUBLIC ${PCL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_exe PUBLIC ${PCL_LIBRARIES})
+target_link_directories(${PROJECT_NAME}_exe PUBLIC ${PCL_LIBRARY_DIRS})
 
 install(
   DIRECTORY include/
@@ -80,11 +76,10 @@ install(
 )
 
 install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT EXPORT_${PROJECT_NAME}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
+  TARGETS ${PROJECT_NAME}_exe
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin/${PROJECT_NAME}
 )
 
 ament_package() 
