@@ -266,9 +266,6 @@ void SurroundObstacleCheckerNode::getNearestObstacleByPointCloud(
   }
 
   Eigen::Affine3f isometry = tf2::transformToEigen(transform_stamped.transform).cast<float>();
-  // This is because it's easier to iterate through this than a
-  // sensor_msgs/PointCloud2 message. Could be done once in pointCloudCallback
-  // as an optimization
   pcl::PointCloud<pcl::PointXYZ> pcl;
   pcl::fromROSMsg(*pointcloud_ptr_, pcl);
   pcl::transformPointCloud(pcl, pcl, isometry);
@@ -386,11 +383,10 @@ bool SurroundObstacleCheckerNode::checkStop(
 
 Polygon2d SurroundObstacleCheckerNode::createSelfPolygon()
 {
-  double front = vehicle_info_.max_longitudinal_offset_m_;
-  double rear = vehicle_info_.min_longitudinal_offset_m_;
-  // TODO(nikolai.morin): Not equivalent to the original
-  double left = vehicle_info_.max_lateral_offset_m_;
-  double right = vehicle_info_.min_lateral_offset_m_;
+  const double front = vehicle_info_.max_longitudinal_offset_m_;
+  const double rear = vehicle_info_.min_longitudinal_offset_m_;
+  const double left = vehicle_info_.max_lateral_offset_m_;
+  const double right = vehicle_info_.min_lateral_offset_m_;
 
   Polygon2d poly;
   boost::geometry::exterior_ring(poly) = boost::assign::list_of<Point2d>(front, left)(front, right)(
