@@ -38,7 +38,7 @@
 class IntersectionModuleManager : public SceneModuleManagerInterface
 {
 public:
-  IntersectionModuleManager();
+  IntersectionModuleManager(rclcpp::Node & node);
 
   const char * getModuleName() override { return "intersection"; }
 

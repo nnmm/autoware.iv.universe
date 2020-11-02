@@ -37,7 +37,7 @@
 class BlindSpotModuleManager : public SceneModuleManagerInterface
 {
 public:
-  BlindSpotModuleManager();
+  BlindSpotModuleManager(rclcpp::Node & node);
 
   const char * getModuleName() override { return "blind_spot"; }
 

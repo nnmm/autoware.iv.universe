@@ -59,7 +59,8 @@ public:
 public:
   DetectionAreaModule(
     const int64_t module_id, const lanelet::autoware::DetectionArea & detection_area_reg_elem,
-    const PlannerParam & planner_param);
+    const PlannerParam & planner_param, const rclcpp::Logger logger,
+    const rclcpp::Clock::SharedPtr clock);
 
   bool modifyPathVelocity(
     autoware_planning_msgs::msg::PathWithLaneId * path,
@@ -97,7 +98,8 @@ private:
     const double & margin, size_t & target_point_idx, Eigen::Vector2d & target_point);
 
   bool isOverDeadLine(
-    const geometry_msgs::msg::Pose & self_pose, const autoware_planning_msgs::msg::PathWithLaneId & input_path,
+    const geometry_msgs::msg::Pose & self_pose,
+    const autoware_planning_msgs::msg::PathWithLaneId & input_path,
     const size_t & dead_line_point_idx, const Eigen::Vector2d & dead_line_point,
     const double dead_line_range);
 

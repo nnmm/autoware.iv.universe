@@ -40,7 +40,7 @@
 class StopLineModuleManager : public SceneModuleManagerInterface
 {
 public:
-  StopLineModuleManager();
+  StopLineModuleManager(rclcpp::Node & node);
 
   const char * getModuleName() override { return "stop_line"; }
 

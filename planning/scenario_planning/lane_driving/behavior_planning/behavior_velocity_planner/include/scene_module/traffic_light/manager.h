@@ -39,7 +39,7 @@
 class TrafficLightModuleManager : public SceneModuleManagerInterface
 {
 public:
-  TrafficLightModuleManager();
+  TrafficLightModuleManager(rclcpp::Node & node);
 
   const char * getModuleName() override { return "traffic_light"; }
 
@@ -53,5 +53,6 @@ private:
     const autoware_planning_msgs::msg::PathWithLaneId & path) override;
 
   // Debug
-  rclcpp::Publisher<autoware_perception_msgs::msg::TrafficLightStateStamped>::SharedPtr pub_tl_state_;
+  rclcpp::Publisher<autoware_perception_msgs::msg::TrafficLightStateStamped>::SharedPtr
+    pub_tl_state_;
 };

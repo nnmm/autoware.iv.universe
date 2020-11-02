@@ -27,6 +27,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_extension/utility/query.h>
 #include <lanelet2_routing/RoutingGraph.h>
@@ -54,7 +56,8 @@ public:
 public:
   StopLineModule(
     const int64_t module_id, const lanelet::ConstLineString3d & stop_line,
-    const PlannerParam & planner_param);
+    const PlannerParam & planner_param, const rclcpp::Logger logger,
+    const rclcpp::Clock::SharedPtr clock);
 
   bool modifyPathVelocity(
     autoware_planning_msgs::msg::PathWithLaneId * path,

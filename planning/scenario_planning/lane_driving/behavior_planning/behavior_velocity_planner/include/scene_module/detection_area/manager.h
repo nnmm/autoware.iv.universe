@@ -40,7 +40,7 @@
 class DetectionAreaModuleManager : public SceneModuleManagerInterface
 {
 public:
-  DetectionAreaModuleManager();
+  DetectionAreaModuleManager(rclcpp::Node & node);
 
   const char * getModuleName() override { return "detection_area"; }
 

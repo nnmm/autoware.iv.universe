@@ -68,14 +68,14 @@ public:
       state_ = State::GO;
       margin_time_ = 0.0;
     }
-    void setStateWithMarginTime(State state);
+    void setStateWithMarginTime(State state, rclcpp::Logger logger, rclcpp::Clock & clock);
     void setState(State state);
     void setMarginTime(const double t);
     State getState();
 
   private:
-    State state_;                            //! current state
-    double margin_time_;                     //! margin time when transit to Go from Stop
+    State state_;                               //! current state
+    double margin_time_;                        //! margin time when transit to Go from Stop
     std::shared_ptr<rclcpp::Time> start_time_;  //! first time received GO when STOP state
   };
 
@@ -98,7 +98,8 @@ public:
 public:
   MergeFromPrivateRoadModule(
     const int64_t module_id, const int64_t lane_id, std::shared_ptr<const PlannerData> planner_data,
-    const IntersectionModule::PlannerParam & planner_param);
+    const IntersectionModule::PlannerParam & planner_param, const rclcpp::Logger logger,
+    const rclcpp::Clock::SharedPtr clock);
 
   /**
    * @brief plan go-stop velocity at traffic crossing with collision check between reference path
